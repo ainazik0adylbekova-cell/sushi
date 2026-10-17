@@ -1,0 +1,496 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/// Роли пользователей: «Пользователь», «Администратор»
+model Role {
+  id          String  @id @default(uuid())
+  name        String  @unique @db.VarChar(50)
+  description String?
+  users       User[]
+
+  @@map("roles")
+}
+
+/// Основная таблица пользователей
+model User {
+  id                 String               @id @default(uuid())
+  name               String               @db.VarChar(100)
+  phone              String?              @unique @db.VarChar(20)
+  email              String?              @unique @db.VarChar(255)
+  password           String               @db.VarChar(255)
+  avatarUrl          String?
+  isActive           Boolean              @default(true)
+  isVerified         Boolean              @default(false)
+  lastLoginAt        DateTime?
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+  roleId             String
+  addresses          Address[]
+  adminLogs          AdminActionLog[]
+  aiChatSessions     AiChatSession[]
+  cart               Cart?
+  notifications      Notification[]
+  orderStatusHistory OrderStatusHistory[]
+  orders             Order[]
+  reviews            Review[]
+  sessions           Session[]
+  role               Role                 @relation(fields: [roleId], references: [id])
+
+  @@map("users")
+}
+
+/// JWT refresh-токены / сессии пользователей
+model Session {
+  id           String   @id @default(uuid())
+  refreshToken String   @unique @db.VarChar(512)
+  userAgent    String?  @db.VarChar(512)
+  ipAddress    String?  @db.VarChar(45)
+  expiresAt    DateTime
+  createdAt    DateTime @default(now())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+/// Категории меню: Роллы, Суши, Сеты, Вок, Напитки …
+model Category {
+  id          String    @id @default(uuid())
+  name        String    @db.VarChar(100)
+  slug        String    @unique @db.VarChar(100)
+  description String?
+  imageUrl    String?
+  sortOrder   Int       @default(0)
+  isActive    Boolean   @default(true)
+  products    Product[]
+
+  @@map("categories")
+}
+
+/// Теги блюд: острое, вегетарианское, хит, новинка …
+model Tag {
+  id       String       @id @default(uuid())
+  name     String       @unique @db.VarChar(50)
+  color    String?      @db.VarChar(20)
+  products ProductTag[]
+
+  @@map("tags")
+}
+
+/// Связь M:N между товарами и тегами
+model ProductTag {
+  productId String
+  tagId     String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  tag       Tag     @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([productId, tagId])
+  @@map("product_tags")
+}
+
+/// Блюда меню
+model Product {
+  id             String         @id @default(uuid())
+  name           String         @db.VarChar(200)
+  slug           String         @unique @db.VarChar(200)
+  description    String?
+  ingredients    String?
+  calories       Int?
+  proteins       Decimal?       @db.Decimal(6, 2)
+  fats           Decimal?       @db.Decimal(6, 2)
+  carbohydrates  Decimal?       @db.Decimal(6, 2)
+  price          Decimal        @db.Decimal(10, 2)
+  discountPrice  Decimal?       @db.Decimal(10, 2)
+  weight         Decimal?       @db.Decimal(8, 2)
+  piecesCount    Int?
+  cookingTimeMin Int?
+  isAvailable    Boolean        @default(true)
+  isPopular      Boolean        @default(false)
+  sortOrder      Int            @default(0)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  categoryId     String
+  cartItems      CartItem[]
+  orderItems     OrderItem[]
+  images         ProductImage[]
+  tags           ProductTag[]
+  category       Category       @relation(fields: [categoryId], references: [id])
+  reviews        Review[]
+
+  @@map("products")
+}
+
+/// Галерея изображений блюда (несколько фото на одно блюдо)
+model ProductImage {
+  id        String  @id @default(uuid())
+  url       String
+  altText   String? @db.VarChar(255)
+  sortOrder Int     @default(0)
+  isMain    Boolean @default(false)
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@map("product_images")
+}
+
+/// Сохранённые адреса доставки пользователя
+model Address {
+  id        String   @id @default(uuid())
+  title     String?  @db.VarChar(100)
+  city      String   @db.VarChar(100)
+  street    String   @db.VarChar(150)
+  house     String   @db.VarChar(20)
+  apartment String?  @db.VarChar(20)
+  entrance  String?  @db.VarChar(20)
+  floor     String?  @db.VarChar(20)
+  intercom  String?  @db.VarChar(20)
+  comment   String?
+  latitude  Decimal? @db.Decimal(10, 8)
+  longitude Decimal? @db.Decimal(11, 8)
+  isDefault Boolean  @default(false)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("addresses")
+}
+
+/// Одна корзина на пользователя
+model Cart {
+  id        String     @id @default(uuid())
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  userId    String     @unique
+  items     CartItem[]
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("carts")
+}
+
+/// Позиция в корзине
+model CartItem {
+  id        String   @id @default(uuid())
+  quantity  Int      @default(1)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  cartId    String
+  productId String
+  cart      Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  product   Product  @relation(fields: [productId], references: [id])
+
+  @@unique([cartId, productId])
+  @@map("cart_items")
+}
+
+/// Справочник статусов: Новый → Подтверждён → Готовится → Передан → Доставлен / Отменён
+model OrderStatus {
+  id                 String               @id @default(uuid())
+  name               String               @unique @db.VarChar(50)
+  slug               String               @unique @db.VarChar(50)
+  description        String?
+  color              String?              @db.VarChar(20)
+  sortOrder          Int                  @default(0)
+  isFinal            Boolean              @default(false)
+  orderStatusHistory OrderStatusHistory[]
+  orders             Order[]
+
+  @@map("order_statuses")
+}
+
+/// Зоны доставки с тарифами
+model DeliveryZone {
+  id               String                @id @default(uuid())
+  name             String                @db.VarChar(100)
+  deliveryCost     Decimal               @db.Decimal(10, 2)
+  minimumOrder     Decimal               @db.Decimal(10, 2)
+  freeDeliveryFrom Decimal?              @db.Decimal(10, 2)
+  estimatedMinutes Int?
+  isActive         Boolean               @default(true)
+  sortOrder        Int                   @default(0)
+  polygons         DeliveryZonePolygon[]
+  orders           Order[]
+
+  @@map("delivery_zones")
+}
+
+/// Координаты полигона зоны доставки (для карты)
+model DeliveryZonePolygon {
+  id        String       @id @default(uuid())
+  latitude  Decimal      @db.Decimal(10, 8)
+  longitude Decimal      @db.Decimal(11, 8)
+  sortOrder Int          @default(0)
+  zoneId    String
+  zone      DeliveryZone @relation(fields: [zoneId], references: [id], onDelete: Cascade)
+
+  @@map("delivery_zone_polygons")
+}
+
+/// Справочник: Наличные, Банковская карта, …
+model PaymentMethod {
+  id          String    @id @default(uuid())
+  name        String    @db.VarChar(100)
+  slug        String    @unique @db.VarChar(50)
+  description String?
+  iconUrl     String?
+  isActive    Boolean   @default(true)
+  sortOrder   Int       @default(0)
+  payments    Payment[]
+
+  @@map("payment_methods")
+}
+
+/// Промокоды для скидок
+model PromoCode {
+  id              String        @id @default(uuid())
+  code            String        @unique @db.VarChar(50)
+  description     String?
+  type            PromoCodeType
+  value           Decimal       @db.Decimal(10, 2)
+  minimumOrder    Decimal?      @db.Decimal(10, 2)
+  maxUsageCount   Int?
+  usageCount      Int           @default(0)
+  maxUsagePerUser Int?
+  activeFrom      DateTime?
+  activeTo        DateTime?
+  isActive        Boolean       @default(true)
+  createdAt       DateTime      @default(now())
+  orderPromos     OrderPromo[]
+
+  @@map("promo_codes")
+}
+
+/// Заказ
+model Order {
+  id              String               @id @default(uuid())
+  orderNumber     String               @unique @db.VarChar(30)
+  deliveryType    DeliveryType         @default(DELIVERY)
+  addressSnapshot String?
+  comment         String?
+  cutleryCount    Int                  @default(0)
+  subtotal        Decimal              @db.Decimal(10, 2)
+  deliveryCost    Decimal              @default(0) @db.Decimal(10, 2)
+  discount        Decimal              @default(0) @db.Decimal(10, 2)
+  total           Decimal              @db.Decimal(10, 2)
+  estimatedAt     DateTime?
+  completedAt     DateTime?
+  cancelReason    String?
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+  userId          String
+  statusId        String
+  deliveryZoneId  String?
+  items           OrderItem[]
+  orderPromos     OrderPromo[]
+  statusHistory   OrderStatusHistory[]
+  deliveryZone    DeliveryZone?        @relation(fields: [deliveryZoneId], references: [id])
+  status          OrderStatus          @relation(fields: [statusId], references: [id])
+  user            User                 @relation(fields: [userId], references: [id])
+  payments        Payment[]
+
+  @@map("orders")
+}
+
+/// Позиции заказа — цена и название фиксируются на момент оформления
+model OrderItem {
+  id              String  @id @default(uuid())
+  productName     String  @db.VarChar(200)
+  productImageUrl String?
+  price           Decimal @db.Decimal(10, 2)
+  quantity        Int
+  subtotal        Decimal @db.Decimal(10, 2)
+  orderId         String
+  productId       String
+  order           Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product         Product @relation(fields: [productId], references: [id])
+
+  @@map("order_items")
+}
+
+/// Полный аудит-лог смены статусов заказа
+model OrderStatusHistory {
+  id          String      @id @default(uuid())
+  comment     String?
+  createdAt   DateTime    @default(now())
+  orderId     String
+  statusId    String
+  changedById String?
+  changedBy   User?       @relation(fields: [changedById], references: [id])
+  order       Order       @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  status      OrderStatus @relation(fields: [statusId], references: [id])
+
+  @@map("order_status_history")
+}
+
+/// Платёж по заказу
+model Payment {
+  id              String        @id @default(uuid())
+  amount          Decimal       @db.Decimal(10, 2)
+  status          PaymentStatus @default(PENDING)
+  transactionId   String?       @db.VarChar(255)
+  paidAt          DateTime?
+  failReason      String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  orderId         String
+  paymentMethodId String
+  order           Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  paymentMethod   PaymentMethod @relation(fields: [paymentMethodId], references: [id])
+
+  @@map("payments")
+}
+
+/// Применённые промокоды к заказу
+model OrderPromo {
+  id             String    @id @default(uuid())
+  discountAmount Decimal   @db.Decimal(10, 2)
+  orderId        String
+  promoCodeId    String
+  order          Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  promoCode      PromoCode @relation(fields: [promoCodeId], references: [id])
+
+  @@map("order_promos")
+}
+
+/// Отзывы пользователей на блюда
+model Review {
+  id        String   @id @default(uuid())
+  rating    Int
+  comment   String?
+  isVisible Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  userId    String
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, productId])
+  @@map("reviews")
+}
+
+/// Уведомления пользователям (статус заказа, промо …)
+model Notification {
+  id        String              @id @default(uuid())
+  type      NotificationType
+  channel   NotificationChannel @default(IN_APP)
+  title     String              @db.VarChar(255)
+  body      String
+  isRead    Boolean             @default(false)
+  readAt    DateTime?
+  metadata  Json?
+  createdAt DateTime            @default(now())
+  userId    String
+  user      User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+}
+
+/// Сессия диалога с AI-ассистентом (меню, рекомендации)
+model AiChatSession {
+  id        String          @id @default(uuid())
+  provider  AiProvider      @default(OPENAI)
+  title     String?         @db.VarChar(255)
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+  userId    String
+  messages  AiChatMessage[]
+  user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("ai_chat_sessions")
+}
+
+/// Сообщение в AI-диалоге
+model AiChatMessage {
+  id           String        @id @default(uuid())
+  role         AiMessageRole
+  content      String
+  inputTokens  Int?
+  outputTokens Int?
+  latencyMs    Int?
+  createdAt    DateTime      @default(now())
+  sessionId    String
+  session      AiChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@map("ai_chat_messages")
+}
+
+/// Аудит-лог всех действий в административной панели
+model AdminActionLog {
+  id         String   @id @default(uuid())
+  action     String   @db.VarChar(100)
+  entityType String   @db.VarChar(50)
+  entityId   String?
+  oldValue   Json?
+  newValue   Json?
+  ipAddress  String?  @db.VarChar(45)
+  createdAt  DateTime @default(now())
+  adminId    String
+  admin      User     @relation(fields: [adminId], references: [id])
+
+  @@map("admin_action_logs")
+}
+
+/// Key-value хранилище настроек (управляется через админку)
+model AppSetting {
+  id          String   @id @default(uuid())
+  key         String   @unique @db.VarChar(100)
+  value       String
+  description String?
+  updatedAt   DateTime @updatedAt
+
+  @@map("app_settings")
+}
+
+/// Тип скидки по промокоду
+enum PromoCodeType {
+  PERCENT
+  FIXED
+}
+
+/// Статус оплаты
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+}
+
+/// Тип уведомления
+enum NotificationType {
+  ORDER_CREATED
+  ORDER_STATUS
+  PROMO
+  SYSTEM
+}
+
+/// Канал доставки уведомления
+enum NotificationChannel {
+  IN_APP
+  EMAIL
+  SMS
+  PUSH
+}
+
+/// Способ получения заказа
+enum DeliveryType {
+  DELIVERY
+  PICKUP
+}
+
+/// AI-провайдер
+enum AiProvider {
+  OPENAI
+  GEMINI
+}
+
+/// Роль сообщения в AI-чате
+enum AiMessageRole {
+  SYSTEM
+  USER
+  ASSISTANT
+}

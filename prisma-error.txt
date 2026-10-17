@@ -1,0 +1,5 @@
+Environment variables loaded from .env
+Error: 
+EPERM: operation not permitted, rename 'C:\Users\user\Desktop\syshi\node_modules\.prisma\client\query_engine-windows.dll.node.tmp4632' -> 'C:\Users\user\Desktop\syshi\node_modules\.prisma\client\query_engine-windows.dll.node'
+
+

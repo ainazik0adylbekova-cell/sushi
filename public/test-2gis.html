@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Тест 2GIS - Суши Жейм</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container { max-width: 1200px; margin: 0 auto; }
+        h1 { color: #f97316; margin-bottom: 20px; }
+        .status {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 8px;
+            background: #f9f9f9;
+        }
+        .status-ok { background: #d1fae5; color: #065f46; }
+        .status-error { background: #fee2e2; color: #991b1b; }
+        .status-loading { background: #dbeafe; color: #1e40af; }
+        #map { 
+            width: 100%; 
+            height: 600px; 
+            border-radius: 12px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+            background: white;
+        }
+        .log {
+            margin-top: 20px;
+            background: #1a1a1a;
+            color: #0f0;
+            padding: 15px;
+            border-radius: 12px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .log div { margin: 2px 0; }
+        .log .error { color: #ff4444; }
+        .log .success { color: #00ff00; }
+        .log .info { color: #44ccff; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🗺️ Диагностика карты 2GIS для "Суши Жейм"</h1>
+        
+        <div class="status">
+            <h2>📊 Статус загрузки:</h2>
+            <div id="status-script" class="status-item status-loading">
+                ⏳ Загрузка скрипта 2GIS...
+            </div>
+            <div id="status-api" class="status-item">
+                ⏳ Инициализация API...
+            </div>
+            <div id="status-map" class="status-item">
+                ⏳ Создание карты...
+            </div>
+            <div id="status-markers" class="status-item">
+                ⏳ Добавление маркеров... (0/13)
+            </div>
+        </div>
+
+        <div id="map"></div>
+
+        <div class="log" id="log"></div>
+    </div>
+
+    <script>
+        // Данные филиалов
+        const branches = [
+            { id: "1", name: "Суши Жейм - Центр", lat: 42.8746, lng: 74.5698, address: "пр. Чуй 123" },
+            { id: "2", name: "Суши Жейм - Ала-Арча", lat: 42.8846, lng: 74.5798, address: "ул. Ала-Арча 45" },
+            { id: "3", name: "Суши Жейм - Раззакова", lat: 42.8646, lng: 74.5898, address: "ул. Раззакова 12" },
+            { id: "4", name: "Суши Жейм - Токтогула", lat: 42.8946, lng: 74.5598, address: "ул. Токтогула 67" },
+            { id: "5", name: "Суши Жейм - Ибраимова", lat: 42.8746, lng: 74.5998, address: "ул. Ибраимова 89" },
+            { id: "6", name: "Суши Жейм - Юнусалиева", lat: 42.8546, lng: 74.5498, address: "ул. Юнусалиева 34" },
+            { id: "7", name: "Суши Жейм - Манас", lat: 42.8846, lng: 74.5398, address: "пр. Манаса 56" },
+            { id: "8", name: "Суши Жейм - Восток-5", lat: 42.8446, lng: 74.6198, address: "мкр. Восток-5" },
+            { id: "9", name: "Суши Жейм - Джал", lat: 42.8346, lng: 74.5298, address: "мкр. Джал" },
+            { id: "10", name: "Суши Жейм - Аламедин-1", lat: 42.8146, lng: 74.5498, address: "мкр. Аламедин-1" },
+            { id: "11", name: "Суши Жейм - Кок-Жар", lat: 42.9046, lng: 74.5198, address: "мкр. Кок-Жар" },
+            { id: "12", name: "Суши Жейм - Асанбай", lat: 42.9146, lng: 74.5798, address: "мкр. Асанбай" },
+            { id: "13", name: "Суши Жейм - Кара-Жыгач", lat: 42.8046, lng: 74.5098, address: "мкр. Кара-Жыгач" },
+        ];
+
+        // Функция логирования
+        function log(message, type = 'info') {
+            console.log(message);
+            const logEl = document.getElementById('log');
+            const time = new Date().toLocaleTimeString('ru-RU');
+            logEl.innerHTML += `<div class="${type}">[${time}] ${message}</div>`;
+            logEl.scrollTop = logEl.scrollHeight;
+        }
+
+        function updateStatus(id, text, isSuccess, isError = false) {
+            const el = document.getElementById(id);
+            el.textContent = text;
+            el.className = 'status-item ' + (isError ? 'status-error' : isSuccess ? 'status-ok' : 'status-loading');
+        }
+
+        // Начало теста
+        log('🚀 Начало диагностики карты 2GIS', 'info');
+        log('📍 Филиалов для отображения: ' + branches.length, 'info');
+
+        // Проверка доступности window
+        if (typeof window === 'undefined') {
+            log('❌ ОШИБКА: window не определён', 'error');
+            updateStatus('status-script', '❌ Ошибка: нет доступа к window', false, true);
+        } else {
+            log('✅ window доступен', 'success');
+        }
+
+        // Загрузка скрипта 2GIS
+        log('📦 Загрузка скрипта 2GIS API...', 'info');
+        
+        const script = document.createElement('script');
+        script.src = 'https://maps.api.2gis.ru/2.0/loader.js?pkg=full';
+        script.async = true;
+
+        script.onload = function() {
+            log('✅ Скрипт 2GIS загружен успешно', 'success');
+            updateStatus('status-script', '✅ Скрипт загружен', true);
+
+            // Проверка DG
+            const DG = window.DG;
+            log('🔍 Тип DG: ' + typeof DG, 'info');
+
+            if (typeof DG === 'function') {
+                log('✅ DG - это функция-loader', 'success');
+                log('🔄 Вызов DG.then() для инициализации API...', 'info');
+
+                // Инициализация API через функцию
+                DG.then(function() {
+                    initializeMap();
+                }).catch(function(err) {
+                    log('❌ ОШИБКА инициализации API: ' + err.message, 'error');
+                    updateStatus('status-api', '❌ Ошибка: ' + err.message, false, true);
+                });
+                
+            } else if (typeof DG === 'object' && DG !== null) {
+                log('✅ DG - это объект, API уже готов', 'success');
+                
+                if (typeof DG.map === 'function') {
+                    log('✅ DG.map доступен, инициализируем карту', 'success');
+                    initializeMap();
+                } else {
+                    log('❌ ОШИБКА: DG.map не найден!', 'error');
+                    updateStatus('status-api', '❌ DG.map недоступен', false, true);
+                }
+                
+            } else {
+                log('❌ ОШИБКА: DG имеет неожиданный тип: ' + typeof DG, 'error');
+                updateStatus('status-api', '❌ Неверный тип DG', false, true);
+            }
+        };
+
+        function initializeMap() {
+            const DG = window.DG;
+            log('✅ 2GIS API успешно инициализирован', 'success');
+            updateStatus('status-api', '✅ API инициализирован', true);
+
+            // Проверка DG.map
+            if (typeof DG.map !== 'function') {
+                log('❌ ОШИБКА: DG.map не является функцией!', 'error');
+                updateStatus('status-map', '❌ DG.map недоступен', false, true);
+                return;
+            }
+
+            log('✅ DG.map доступен', 'success');
+            log('🗺️ Создание карты...', 'info');
+
+            try {
+                // Создание карты
+                const map = DG.map('map', {
+                    center: [42.8746, 74.5698], // [lat, lng] - Центр Бишкека
+                    zoom: 11
+                });
+
+                log('✅ Карта успешно создана', 'success');
+                updateStatus('status-map', '✅ Карта создана', true);
+
+                // Добавление маркеров
+                log('📍 Начало добавления маркеров...', 'info');
+                const markers = [];
+                let addedCount = 0;
+
+                branches.forEach((branch, index) => {
+                    try {
+                        const marker = DG.marker([branch.lat, branch.lng], {
+                            icon: DG.icon({
+                                iconUrl: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 24 24' fill='%23f97316' stroke='white' stroke-width='1.5'%3E%3Cpath d='M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z'/%3E%3C/svg%3E",
+                                iconSize: [32, 32],
+                                iconAnchor: [16, 32],
+                                popupAnchor: [0, -32]
+                            })
+                        }).addTo(map);
+
+                        const popupContent = `
+                            <div style="padding: 12px; min-width: 200px;">
+                                <h3 style="margin: 0 0 8px; font-size: 14px; font-weight: bold; color: #f97316;">
+                                    ${branch.name}
+                                </h3>
+                                <p style="margin: 0; font-size: 13px; color: #666;">
+                                    ${branch.address}
+                                </p>
+                            </div>
+                        `;
+                        marker.bindPopup(popupContent);
+                        markers.push(marker);
+                        addedCount++;
+
+                        log(`  ✓ Маркер ${addedCount}/13: ${branch.name} [${branch.lat}, ${branch.lng}]`, 'success');
+                        updateStatus('status-markers', `⏳ Добавлено маркеров: ${addedCount}/13`, false);
+
+                    } catch (err) {
+                        log(`  ✗ Ошибка добавления маркера ${index + 1}: ${err.message}`, 'error');
+                    }
+                });
+
+                if (addedCount === branches.length) {
+                    log('✅ Все маркеры успешно добавлены (' + addedCount + ' шт.)', 'success');
+                    updateStatus('status-markers', '✅ Добавлено маркеров: ' + addedCount + '/13', true);
+
+                    // Подгонка масштаба
+                    log('🔍 Подгонка масштаба карты...', 'info');
+                    const group = DG.featureGroup(markers);
+                    map.fitBounds(group.getBounds(), { padding: [50, 50] });
+                    log('✅ Масштаб подогнан под все маркеры', 'success');
+
+                    log('🎉 ДИАГНОСТИКА ЗАВЕРШЕНА УСПЕШНО!', 'success');
+                    log('✅ Карта полностью работоспособна', 'success');
+                } else {
+                    log('⚠️ Добавлено только ' + addedCount + ' из ' + branches.length + ' маркеров', 'error');
+                    updateStatus('status-markers', '⚠️ Частично: ' + addedCount + '/13', false, true);
+                }
+
+            } catch (err) {
+                log('❌ ОШИБКА при создании карты: ' + err.message, 'error');
+                log('Stack trace: ' + err.stack, 'error');
+                updateStatus('status-map', '❌ Ошибка: ' + err.message, false, true);
+            }
+        }
+        };
+
+        script.onerror = function() {
+            log('❌ КРИТИЧЕСКАЯ ОШИБКА: Не удалось загрузить скрипт 2GIS', 'error');
+            log('Возможные причины:', 'error');
+            log('  - Нет интернет-соединения', 'error');
+            log('  - Блокировка файрволом/антивирусом', 'error');
+            log('  - Проблемы с DNS', 'error');
+            updateStatus('status-script', '❌ Не удалось загрузить скрипт', false, true);
+        };
+
+        document.head.appendChild(script);
+        log('📤 Скрипт добавлен в DOM', 'info');
+    </script>
+</body>
+</html>

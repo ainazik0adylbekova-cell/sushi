@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Тест карты 2ГИС</title>
+    <script src="https://maps.api.2gis.ru/2.0/loader.js?pkg=full"></script>
+    <style>
+        body { margin: 0; padding: 20px; font-family: Arial; }
+        #map { width: 100%; height: 600px; border: 2px solid #f97316; }
+        .info { margin-bottom: 20px; padding: 15px; background: #f0f0f0; border-radius: 8px; }
+        .log { margin-top: 20px; padding: 15px; background: #1a1a1a; color: #0f0; font-family: monospace; max-height: 200px; overflow-y: auto; }
+    </style>
+</head>
+<body>
+    <h1>🗺️ Тест карты 2ГИС для проекта "Суши Жейм"</h1>
+    
+    <div class="info">
+        <h2>Информация:</h2>
+        <p id="status">Загрузка...</p>
+        <p id="markers">Маркеров: 0</p>
+    </div>
+
+    <div id="map"></div>
+
+    <div class="log" id="log"></div>
+
+    <script>
+        const branches = [
+            { id: "1", name: "Суши Жейм - Центр", lat: 42.8746, lng: 74.5698 },
+            { id: "2", name: "Суши Жейм - Ала-Арча", lat: 42.8846, lng: 74.5798 },
+            { id: "3", name: "Суши Жейм - Раззакова", lat: 42.8646, lng: 74.5898 },
+            { id: "4", name: "Суши Жейм - Токтогула", lat: 42.8946, lng: 74.5598 },
+            { id: "5", name: "Суши Жейм - Ибраимова", lat: 42.8746, lng: 74.5998 },
+            { id: "6", name: "Суши Жейм - Юнусалиева", lat: 42.8546, lng: 74.5498 },
+            { id: "7", name: "Суши Жейм - Манас", lat: 42.8846, lng: 74.5398 },
+            { id: "8", name: "Суши Жейм - Восток-5", lat: 42.8446, lng: 74.6198 },
+            { id: "9", name: "Суши Жейм - Джал", lat: 42.8346, lng: 74.5298 },
+            { id: "10", name: "Суши Жейм - Аламедин-1", lat: 42.8146, lng: 74.5498 },
+            { id: "11", name: "Суши Жейм - Кок-Жар", lat: 42.9046, lng: 74.5198 },
+            { id: "12", name: "Суши Жейм - Асанбай", lat: 42.9146, lng: 74.5798 },
+            { id: "13", name: "Суши Жейм - Кара-Жыгач", lat: 42.8046, lng: 74.5098 },
+        ];
+
+        function log(msg) {
+            console.log(msg);
+            const logEl = document.getElementById('log');
+            logEl.innerHTML += msg + '<br>';
+            logEl.scrollTop = logEl.scrollHeight;
+        }
+
+        log('🚀 Начало теста...');
+        log('📦 Загрузка 2GIS API...');
+
+        DG.then(function() {
+            log('✅ 2GIS API загружен');
+            document.getElementById('status').textContent = 'API загружен ✅';
+
+            log('🗺️ Создание карты...');
+            
+            const map = DG.map('map', {
+                center: [42.8746, 74.5698],
+                zoom: 11
+            });
+
+            log('✅ Карта создана');
+            document.getElementById('status').textContent = 'Карта создана ✅';
+
+            log('📍 Добавление маркеров...');
+            
+            const markers = [];
+            branches.forEach((branch, index) => {
+                log(`  Маркер ${index + 1}: ${branch.name} [${branch.lat}, ${branch.lng}]`);
+                
+                const marker = DG.marker([branch.lat, branch.lng]).addTo(map);
+                marker.bindPopup(`<b>${branch.name}</b>`);
+                markers.push(marker);
+            });
+
+            document.getElementById('markers').textContent = `Маркеров: ${markers.length}`;
+            log(`✅ Добавлено ${markers.length} маркеров`);
+
+            if (markers.length > 0) {
+                const group = DG.featureGroup(markers);
+                map.fitBounds(group.getBounds(), { padding: [50, 50] });
+                log('✅ Масштаб подогнан');
+            }
+
+            log('🎉 Тест завершен успешно!');
+            document.getElementById('status').textContent = 'Всё работает! 🎉';
+
+        }).catch(function(error) {
+            log('❌ ОШИБКА: ' + error.message);
+            document.getElementById('status').textContent = 'Ошибка: ' + error.message;
+            console.error(error);
+        });
+    </script>
+</body>
+</html>

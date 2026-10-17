@@ -1,0 +1,169 @@
+Схема базы данных проекта «Суши Жейм»
+1. Пользователи — users
+Поле	Тип	Что хранит
+id	UUID	Уникальный номер пользователя
+name	VARCHAR(100)	Имя пользователя
+phone	VARCHAR(20)	Номер телефона
+email	VARCHAR(255)	Электронная почта
+password	VARCHAR(255)	Пароль в защищённом виде
+role_id	UUID	Роль пользователя
+is_active	BOOLEAN	Активен ли аккаунт
+created_at	TIMESTAMP	Дата регистрации
+Пример: Айназик → телефон → пароль → роль «Пользователь».
+2. Роли — roles
+Поле	Тип	Что хранит
+id	UUID	ID роли
+name	VARCHAR(50)	Название роли
+description	TEXT	Описание роли
+Будет две основные роли: Пользователь и Администратор.
+3. Категории — categories
+Поле	Тип	Что хранит
+id	UUID	ID категории
+name	VARCHAR(100)	Название категории
+description	TEXT	Описание
+image_url	TEXT	Изображение категории
+sort_order	INTEGER	Порядок отображения
+is_active	BOOLEAN	Показывать категорию или нет
+Примеры: Роллы, Суши, Сеты, Вок, Напитки.
+4. Товары — products
+Поле	Тип	Что хранит
+id	UUID	ID блюда
+category_id	UUID	К какой категории относится
+name	VARCHAR(200)	Название блюда
+description	TEXT	Описание блюда
+price	NUMERIC(10,2)	Цена
+weight	NUMERIC(8,2)	Вес
+pieces_count	INTEGER	Количество штук
+image_url	TEXT	Ссылка на изображение
+is_available	BOOLEAN	Есть ли блюдо в наличии
+created_at	TIMESTAMP	Дата добавления
+updated_at	TIMESTAMP	Дата изменения
+Пример: Филадельфия → Роллы → 650 сом → 280 г → доступна.
+5. Адреса — addresses
+Поле	Тип	Что хранит
+id	UUID	ID адреса
+user_id	UUID	Кому принадлежит адрес
+title	VARCHAR(100)	Название адреса
+city	VARCHAR(100)	Город
+street	VARCHAR(150)	Улица
+house	VARCHAR(20)	Номер дома
+apartment	VARCHAR(20)	Номер квартиры
+entrance	VARCHAR(20)	Подъезд
+floor	VARCHAR(20)	Этаж
+comment	TEXT	Дополнительный комментарий
+is_default	BOOLEAN	Основной ли адрес
+Пример: Дом → Бишкек → ул. Ленина → дом 10 → квартира 25.
+6. Корзины — carts
+Поле	Тип	Что хранит
+id	UUID	ID корзины
+user_id	UUID	Пользователь
+created_at	TIMESTAMP	Когда создана корзина
+updated_at	TIMESTAMP	Когда изменена корзина
+7. Товары в корзине — cart_items
+Поле	Тип	Что хранит
+id	UUID	ID позиции
+cart_id	UUID	Какая корзина
+product_id	UUID	Какое блюдо
+quantity	INTEGER	Количество
+created_at	TIMESTAMP	Когда добавили
+Здесь работает логика «+» и «−». Например: Филадельфия — 2, Вок — 1.
+8. Заказы — orders
+Поле	Тип	Что хранит
+id	UUID	ID заказа
+order_number	VARCHAR(30)	Номер заказа
+user_id	UUID	Кто сделал заказ
+status_id	UUID	Текущий статус
+address	TEXT	Адрес доставки
+comment	TEXT	Комментарий клиента
+subtotal	NUMERIC(10,2)	Сумма товаров
+delivery_cost	NUMERIC(10,2)	Стоимость доставки
+discount	NUMERIC(10,2)	Скидка
+total	NUMERIC(10,2)	Итоговая сумма
+created_at	TIMESTAMP	Дата создания
+Пример: Заказ №10025: товары 1500 сом, доставка 150 сом, скидка 100 сом, итого 1550 сом.
+9. Товары заказа — order_items
+Поле	Тип	Что хранит
+id	UUID	ID позиции
+order_id	UUID	Какому заказу принадлежит
+product_id	UUID	Какое блюдо
+product_name	VARCHAR(200)	Название на момент заказа
+price	NUMERIC(10,2)	Цена на момент заказа
+quantity	INTEGER	Количество
+subtotal	NUMERIC(10,2)	Стоимость позиции
+Название и цена сохраняются на момент заказа, чтобы история покупки не менялась после изменения товара.
+10. Статусы заказов — order_statuses
+Поле	Тип	Что хранит
+id	UUID	ID статуса
+name	VARCHAR(50)	Название статуса
+description	TEXT	Описание
+Статусы: Новый, Подтверждён, Готовится, Передан в доставку, Доставлен, Отменён.
+11. История статусов — order_status_history
+Поле	Тип	Что хранит
+id	UUID	ID записи
+order_id	UUID	Какой заказ
+status_id	UUID	Какой статус
+changed_by	UUID	Кто изменил статус
+created_at	TIMESTAMP	Когда изменили
+Пример: №10025 — Новый — 15:00; Подтверждён — 15:05; Готовится — 15:20; Доставлен — 16:10.
+12. Зоны доставки — delivery_zones
+Поле	Тип	Что хранит
+id	UUID	ID зоны
+name	VARCHAR(100)	Название зоны
+delivery_cost	NUMERIC(10,2)	Стоимость доставки
+minimum_order	NUMERIC(10,2)	Минимальная сумма заказа
+free_delivery_from	NUMERIC(10,2)	От какой суммы доставка бесплатная
+is_active	BOOLEAN	Активна ли зона
+Администратор управляет зонами доставки, стоимостью и минимальной суммой заказа.
+13. Способы оплаты — payment_methods
+Поле	Тип	Что хранит
+id	UUID	ID способа
+name	VARCHAR(100)	Название
+description	TEXT	Описание
+is_active	BOOLEAN	Доступен ли способ
+Например: Наличные, Банковская карта.
+14. Оплаты — payments
+Поле	Тип	Что хранит
+id	UUID	ID оплаты
+order_id	UUID	Какой заказ
+payment_method_id	UUID	Способ оплаты
+amount	NUMERIC(10,2)	Сумма
+status	VARCHAR(50)	Статус оплаты
+paid_at	TIMESTAMP	Дата оплаты
+15. Промокоды — promo_codes
+Поле	Тип	Что хранит
+id	UUID	ID промокода
+code	VARCHAR(50)	Код, например SUSHI10
+type	VARCHAR(30)	Процент или фиксированная сумма
+value	NUMERIC(10,2)	Размер скидки
+minimum_order	NUMERIC(10,2)	Минимальная сумма заказа
+active_from	TIMESTAMP	Начало действия
+active_to	TIMESTAMP	Конец действия
+is_active	BOOLEAN	Активен ли промокод
+Промокоды предусмотрены административной частью ТЗ.
+16. Промокоды заказа — order_promos
+Поле	Тип	Что хранит
+id	UUID	ID
+order_id	UUID	Какой заказ
+promo_code_id	UUID	Какой промокод
+discount_amount	NUMERIC(10,2)	Сколько составила скидка
+17. Журнал администратора — admin_action_logs
+Поле	Тип	Что хранит
+id	UUID	ID записи
+admin_id	UUID	Какой администратор
+action	VARCHAR(100)	Что сделал
+entity_type	VARCHAR(50)	С чем работал
+entity_id	UUID	ID объекта
+created_at	TIMESTAMP	Когда произошло
+Пример: Администратор изменил цену товара.
+Самая простая схема связей
+•	ROLES → USERS
+•	USERS → ADDRESSES
+•	USERS → CARTS → CART_ITEMS → PRODUCTS
+•	USERS → ORDERS → ORDER_ITEMS → PRODUCTS
+•	ORDERS → ORDER_STATUSES
+•	ORDERS → ORDER_STATUS_HISTORY
+•	ORDERS → PAYMENTS → PAYMENT_METHODS
+•	ORDERS → ORDER_PROMOS → PROMO_CODES
+•	ORDERS → DELIVERY_ZONES
+•	CATEGORIES → PRODUCTS
+•	USERS (администратор) → AD

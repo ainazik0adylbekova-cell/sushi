@@ -1,0 +1,95 @@
+{
+  "pbtResults": {
+    "1. Write bug condition exploration test": {
+      "status": "passed",
+      "failingExample": "Bug Condition Confirmed - Schema Mismatch\n\nThe test confirms that ALL registration attempts fail with the following error:\n\"The column `users.avatarUrl` does not exist in the current database\"\n\nRoot Cause Analysis:\n- Prisma schema (prisma/schema.prisma, line 27) defines: avatarUrl String?\n- PostgreSQL database does NOT have users.avatarUrl column\n- When prisma.user.create() is called in app/api/auth/register/route.ts (line 98)\n- Prisma generates SQL referencing avatarUrl column\n- PostgreSQL rejects query with column not found error\n\nCounterexamples Tested:\n1. Basic registration: {name: \"Test User\", email: \"test@example.com\", password: \"password123\"}\n   → FAILS with avatarUrl error\n   \n2. Registration with phone: {name: \"John Doe\", email: \"john@test.com\", password: \"pass\", phone: \"+1234567890\"}\n   → FAILS with avatarUrl error\n   \n3. Email normalization: {name: \"Jane Smith\", email: \"  TEST@Example.COM  \", password: \"pass\"}\n   → FAILS with avatarUrl error\n   \n4. Property-based test (10 random valid combinations):\n   → ALL FAIL with avatarUrl error\n\nConclusion: The bug affects EVERY registration attempt regardless of input variation. The schema mismatch must be fixed by removing the avatarUrl field from the Prisma schema.",
+      "lastRunTimestamp": 1792232428586
+    }
+  },
+  "executionHistory": {
+    "1. Write bug condition exploration test": [
+      {
+        "executionId": "e4b08769-607f-44c1-b83a-548c647e0694",
+        "chatSessionId": "sess_a7cc6913-bae6-4a4c-b9f9-96019cd43131",
+        "timestamp": 1792231601799
+      },
+      {
+        "executionId": "e4b08769-607f-44c1-b83a-548c647e0694",
+        "chatSessionId": "sess_a7cc6913-bae6-4a4c-b9f9-96019cd43131",
+        "timestamp": 1792231611930
+      },
+      {
+        "executionId": "e4b08769-607f-44c1-b83a-548c647e0694",
+        "chatSessionId": "sess_a7cc6913-bae6-4a4c-b9f9-96019cd43131",
+        "timestamp": 1792232448401
+      }
+    ],
+    "2. Write preservation property tests (BEFORE implementing fix)": [
+      {
+        "executionId": "e4b08769-607f-44c1-b83a-548c647e0694",
+        "chatSessionId": "sess_a7cc6913-bae6-4a4c-b9f9-96019cd43131",
+        "timestamp": 1792231601865
+      },
+      {
+        "executionId": "e4b08769-607f-44c1-b83a-548c647e0694",
+        "chatSessionId": "sess_a7cc6913-bae6-4a4c-b9f9-96019cd43131",
+        "timestamp": 1792232454195
+      },
+      {
+        "executionId": "e4b08769-607f-44c1-b83a-548c647e0694",
+        "chatSessionId": "sess_a7cc6913-bae6-4a4c-b9f9-96019cd43131",
+        "timestamp": 1792233304856
+      }
+    ],
+    "3.1 Remove avatarUrl field from Prisma schema": [
+      {
+        "executionId": "e4b08769-607f-44c1-b83a-548c647e0694",
+        "chatSessionId": "sess_a7cc6913-bae6-4a4c-b9f9-96019cd43131",
+        "timestamp": 1792231601910
+      },
+      {
+        "executionId": "e4b08769-607f-44c1-b83a-548c647e0694",
+        "chatSessionId": "sess_a7cc6913-bae6-4a4c-b9f9-96019cd43131",
+        "timestamp": 1792233317623
+      },
+      {
+        "executionId": "e4b08769-607f-44c1-b83a-548c647e0694",
+        "chatSessionId": "sess_a7cc6913-bae6-4a4c-b9f9-96019cd43131",
+        "timestamp": 1792234040991
+      }
+    ],
+    "3.2 Verify no code references to avatarUrl": [
+      {
+        "executionId": "e4b08769-607f-44c1-b83a-548c647e0694",
+        "chatSessionId": "sess_a7cc6913-bae6-4a4c-b9f9-96019cd43131",
+        "timestamp": 1792231601954
+      },
+      {
+        "executionId": "e4b08769-607f-44c1-b83a-548c647e0694",
+        "chatSessionId": "sess_a7cc6913-bae6-4a4c-b9f9-96019cd43131",
+        "timestamp": 1792234047244
+      }
+    ],
+    "3.3 Verify bug condition exploration test now passes": [
+      {
+        "executionId": "e4b08769-607f-44c1-b83a-548c647e0694",
+        "chatSessionId": "sess_a7cc6913-bae6-4a4c-b9f9-96019cd43131",
+        "timestamp": 1792231602000
+      }
+    ],
+    "3.4 Verify preservation tests still pass": [
+      {
+        "executionId": "e4b08769-607f-44c1-b83a-548c647e0694",
+        "chatSessionId": "sess_a7cc6913-bae6-4a4c-b9f9-96019cd43131",
+        "timestamp": 1792231602049
+      }
+    ],
+    "4. Checkpoint - Ensure all tests pass": [
+      {
+        "executionId": "e4b08769-607f-44c1-b83a-548c647e0694",
+        "chatSessionId": "sess_a7cc6913-bae6-4a4c-b9f9-96019cd43131",
+        "timestamp": 1792231602143
+      }
+    ]
+  }
+}
