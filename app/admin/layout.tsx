@@ -122,7 +122,7 @@ function NavLink({
 // ── Sidebar ────────────────────────────────────────────────────────────────
 function Sidebar({ collapsed, onToggle, onClose, mobile = false, labels }: {
   collapsed: boolean; onToggle: () => void; onClose?: () => void;
-  mobile?: boolean; labels: typeof LABELS["ru"];
+  mobile?: boolean; labels: Record<keyof typeof LABELS["ru"], string>;
 }) {
   const router = useRouter();
 

@@ -142,10 +142,8 @@ export default function DeliveryPage() {
 
             <Link
               href="/menu"
-              className="flex-1 flex items-center justify-center gap-2 h-14 rounded-2xl text-white font-black text-sm transition-all"
+              className="flex-1 flex items-center justify-center gap-2 h-14 rounded-2xl text-white font-black text-sm transition-all hover:opacity-90 active:scale-[0.98]"
               style={{ background: "var(--brand)", boxShadow: "0 4px 16px rgba(249,115,22,0.35)" }}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "var(--brand-hover)"; }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "var(--brand)"; }}
             >
               Заказать сейчас
               <ArrowRight className="w-4 h-4" />

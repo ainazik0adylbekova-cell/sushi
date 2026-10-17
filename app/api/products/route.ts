@@ -67,13 +67,16 @@ export async function POST(req: NextRequest) {
         slug:        finalSlug,
         description: description?.trim() || null,
         price:       parseFloat(String(price)),
-        weight:      weight?.trim() || null,
-        imageUrl:    imageUrl || null,
+        weight:      weight ? parseFloat(String(weight)) : null,
         isAvailable: Boolean(isAvailable),
         categoryId:  resolvedCategoryId,
+        images:      imageUrl ? {
+          create: [{ url: imageUrl, isMain: true }]
+        } : undefined,
       },
       include: {
         category: { select: { id: true, name: true, slug: true } },
+        images: true,
       },
     });
 

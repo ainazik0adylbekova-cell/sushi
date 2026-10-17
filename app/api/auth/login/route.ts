@@ -70,16 +70,7 @@ export async function POST(req: NextRequest) {
     });
 
     // Создаём сессию
-    await setSessionCookie({
-      userId: user.id,
-      name: user.name,
-      email: user.email!,
-      role: user.role.name
-    });
-
-    console.log("[LOGIN] Успешный вход:", user.email);
-
-    return NextResponse.json({
+    const res = NextResponse.json({
       success: true,
       user: {
         id: user.id,
@@ -88,6 +79,17 @@ export async function POST(req: NextRequest) {
         role: user.role.name
       }
     }, { status: 200 });
+
+    await setSessionCookie({
+      userId: user.id,
+      name: user.name,
+      email: user.email!,
+      role: user.role.name
+    }, res);
+
+    console.log("[LOGIN] Успешный вход:", user.email);
+
+    return res;
 
   } catch (error) {
     console.error("[LOGIN] Ошибка:", error);

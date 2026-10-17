@@ -4,11 +4,8 @@ import { prisma } from "@/lib/db";
 // POST /api/admin/clear-products — удаляет все тестовые товары
 export async function POST() {
   try {
-    // Сначала обнуляем ссылки в orderItems (чтобы не нарушить историю заказов)
-    await prisma.orderItem.updateMany({
-      where: { productId: { not: null } },
-      data:  { productId: null },
-    });
+    await prisma.cartItem.deleteMany({});
+    await prisma.orderItem.deleteMany({});
     // Удаляем все товары
     const { count } = await prisma.product.deleteMany({});
     return NextResponse.json({ ok: true, deleted: count });

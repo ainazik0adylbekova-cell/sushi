@@ -35,11 +35,8 @@ export async function GET() {
 
   // 2. Очищаем тестовые блюда
   try {
-    // Сначала обнуляем FK в orderItems
-    await prisma.orderItem.updateMany({
-      where: { productId: { not: null } },
-      data:  { productId: null },
-    }).catch(() => {}); // таблица может не существовать
+    await prisma.cartItem.deleteMany({}).catch(() => {});
+    await prisma.orderItem.deleteMany({}).catch(() => {});
 
     const { count } = await prisma.product.deleteMany({});
     result.products = { ok: true, deleted: count };

@@ -9,7 +9,7 @@
 
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
 export const SESSION_COOKIE = "syshi_session";
 const COOKIE_MAX_AGE = 60 * 60 * 24 * 30; // 30 days
@@ -45,33 +45,57 @@ export async function verifyJwt(token: string): Promise<SessionPayload | null> {
 }
 
 export async function getSession(): Promise<SessionPayload | null> {
-  const cookieStore = await cookies();
-  const token = cookieStore.get(SESSION_COOKIE)?.value;
-  if (!token) return null;
-  return verifyJwt(token);
+  try {
+    const cookieStore = await cookies();
+    const token = cookieStore.get(SESSION_COOKIE)?.value;
+    if (!token) return null;
+    return verifyJwt(token);
+  } catch {
+    return null;
+  }
 }
 
-export async function setSessionCookie(payload: SessionPayload): Promise<void> {
+export async function setSessionCookie(payload: SessionPayload, response?: NextResponse): Promise<void> {
   const token = await signJwt(payload);
-  const cookieStore = await cookies();
-  cookieStore.set(SESSION_COOKIE, token, {
+  const cookieOptions = {
     httpOnly: true,
     secure:   process.env.NODE_ENV === "production",
-    sameSite: "lax",
+    sameSite: "lax" as const,
     path:     "/",
     maxAge:   COOKIE_MAX_AGE,
-  });
+  };
+
+  if (response) {
+    response.cookies.set(SESSION_COOKIE, token, cookieOptions);
+  }
+
+  try {
+    const cookieStore = await cookies();
+    cookieStore.set(SESSION_COOKIE, token, cookieOptions);
+  } catch {
+    // Gracefully ignore when outside Next.js request store (e.g. unit tests)
+  }
 }
 
-export async function clearSessionCookie(): Promise<void> {
-  const cookieStore = await cookies();
-  cookieStore.set(SESSION_COOKIE, "", {
+export async function clearSessionCookie(response?: NextResponse): Promise<void> {
+  const cookieOptions = {
     httpOnly: true,
     secure:   process.env.NODE_ENV === "production",
-    sameSite: "lax",
+    sameSite: "lax" as const,
     path:     "/",
     maxAge:   0,
-  });
+  };
+
+  if (response) {
+    response.cookies.set(SESSION_COOKIE, "", cookieOptions);
+  }
+
+  try {
+    const cookieStore = await cookies();
+    cookieStore.set(SESSION_COOKIE, "", cookieOptions);
+  } catch {
+    // Gracefully ignore when outside Next.js request store (e.g. unit tests)
+  }
 }
 
 export function buildGoogleAuthUrl(): string {

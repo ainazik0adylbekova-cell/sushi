@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { CheckCircle, XCircle, Loader2, ArrowRight, Home } from "lucide-react";
 import Header from "../components/landing/Header";
 import Footer from "../components/landing/Footer";
 
-export default function PaymentSuccessPage() {
+function PaymentSuccessContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [status, setStatus] = useState<"loading" | "success" | "failed">("loading");
@@ -138,5 +138,13 @@ export default function PaymentSuccessPage() {
       </main>
       <Footer />
     </>
+  );
+}
+
+export default function PaymentSuccessPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen" style={{ background: "var(--bg)" }} />}>
+      <PaymentSuccessContent />
+    </Suspense>
   );
 }

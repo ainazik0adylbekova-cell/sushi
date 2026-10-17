@@ -652,7 +652,7 @@ export default function CartDrawer() {
               {/* Payment info */}
               <div
                 className="rounded-xl p-4 mb-4"
-                style={{ background: "var(--brand-light)" || "#f0f9ff", border: "1px solid var(--brand)" }}
+                style={{ background: "var(--brand-light)", border: "1px solid var(--brand)" }}
               >
                 <p className="text-sm font-semibold mb-1" style={{ color: "var(--brand)" }}>
                   💳 Фиксированная цена

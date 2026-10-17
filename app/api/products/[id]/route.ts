@@ -59,10 +59,12 @@ export async function DELETE(_req: NextRequest, { params }: Ctx) {
   try {
     const { id } = await params;
 
-    // Безопасно удаляем — сначала обнуляем ссылки в orderItems
-    await prisma.orderItem.updateMany({
+    // Безопасно удаляем зависимости
+    await prisma.cartItem.deleteMany({
       where: { productId: id },
-      data:  { productId: null },
+    });
+    await prisma.orderItem.deleteMany({
+      where: { productId: id },
     });
 
     await prisma.product.delete({ where: { id } });

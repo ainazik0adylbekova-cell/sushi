@@ -74,7 +74,7 @@ export default function PopularDishes() {
               key={dish.id}
               dish={dish}
               toCartLabel={t.toCart}
-              onAddToCart={() => addToCart({ id: dish.id, name: dish.name, price: dish.price, accent: dish.accent })}
+              onAddToCart={() => addToCart({ id: String(dish.id), name: dish.name, price: dish.price, accent: dish.accent })}
             />
           ))}
         </div>

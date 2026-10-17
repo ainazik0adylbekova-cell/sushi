@@ -15,22 +15,23 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Введите имя" }, { status: 400 });
     }
 
-    if (!email || !email.trim()) {
+    if (!email || typeof email !== "string" || !email.trim()) {
       return NextResponse.json({ error: "Введите email" }, { status: 400 });
     }
 
+    const emailTrimmed = email.trim();
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
+    if (!emailRegex.test(emailTrimmed)) {
       return NextResponse.json({ error: "Некорректный email" }, { status: 400 });
     }
 
+    const emailLower = emailTrimmed.toLowerCase();
+    
     if (!password || password.length < 6) {
       return NextResponse.json({ 
         error: "Пароль должен содержать минимум 6 символов" 
       }, { status: 400 });
     }
-
-    const emailLower = email.toLowerCase().trim();
 
     // Проверяем существует ли пользователь
     const existingUser = await prisma.user.findUnique({
@@ -109,16 +110,7 @@ export async function POST(req: NextRequest) {
     console.log("[REGISTER] Пользователь создан:", newUser.id, newUser.email);
 
     // Создаём сессию
-    await setSessionCookie({
-      userId: newUser.id,
-      name: newUser.name,
-      email: newUser.email!,
-      role: newUser.role.name
-    });
-
-    console.log("[REGISTER] Сессия установлена");
-
-    return NextResponse.json({
+    const res = NextResponse.json({
       success: true,
       user: {
         id: newUser.id,
@@ -127,6 +119,17 @@ export async function POST(req: NextRequest) {
         role: newUser.role.name
       }
     }, { status: 201 });
+
+    await setSessionCookie({
+      userId: newUser.id,
+      name: newUser.name,
+      email: newUser.email!,
+      role: newUser.role.name
+    }, res);
+
+    console.log("[REGISTER] Сессия установлена");
+
+    return res;
 
   } catch (error) {
     console.error("[REGISTER] Ошибка:", error);

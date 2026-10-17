@@ -143,7 +143,7 @@ describe('Preservation: Validation Logic', () => {
     await fc.assert(
       fc.asyncProperty(
         fc.record({
-          name: fc.string({ minLength: 1 }),
+          name: fc.string({ minLength: 1, maxLength: 50 }).filter(s => s.trim().length > 0),
           // Generate invalid emails
           email: fc.constantFrom(
             "notanemail",

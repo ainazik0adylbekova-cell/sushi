@@ -134,7 +134,7 @@ export default function MenuSection() {
               catLabel={catLabels[d.slug]}
               tagLabel={d.tagKey ? tagLabels[d.tagKey] : null}
               toCartLabel={t.toCart}
-              onAddToCart={() => addToCart({ id: d.id, name: dishNames[d.nameKey], price: d.price, accent: d.accent })}
+              onAddToCart={() => addToCart({ id: String(d.id), name: dishNames[d.nameKey], price: d.price, accent: d.accent })}
             />
           ))}
         </div>

@@ -38,10 +38,10 @@ export async function POST(request: NextRequest) {
       amount: FIXED_PRICE,
       orderId,
       orderDescription: orderDescription || 'Оплата заказа',
-      userId: user.id.toString(),
+      userId: user.userId,
     };
 
-    console.log(`[FINIK_PAYMENT] Creating payment for user ${user.id}, order ${orderId}, amount: ${FIXED_PRICE} сом`);
+    console.log(`[FINIK_PAYMENT] Creating payment for user ${user.userId}, order ${orderId}, amount: ${FIXED_PRICE} сом`);
 
     // 6. Создание платежа в Finik
     const paymentUrl = await createFinikPayment(paymentData);
