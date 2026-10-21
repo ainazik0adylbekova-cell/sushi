@@ -22,11 +22,19 @@ export async function GET(req: NextRequest) {
       },
       include: {
         category: { select: { id: true, name: true, slug: true } },
+        images: { orderBy: { sortOrder: "asc" } },
       },
       orderBy: { createdAt: "desc" },
     });
 
-    return NextResponse.json({ products });
+    // Преобразуем для фронтенда: добавляем imageUrl из первого изображения
+    const productsWithImageUrl = products.map(p => ({
+      ...p,
+      imageUrl: p.images.find(img => img.isMain)?.url || p.images[0]?.url || null,
+      weight: p.weight ? p.weight.toString() : null,
+    }));
+
+    return NextResponse.json({ products: productsWithImageUrl });
   } catch (err) {
     console.error("[GET /api/products]", err);
     return NextResponse.json({ error: "Ошибка сервера" }, { status: 500 });
@@ -80,10 +88,16 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    return NextResponse.json({ product }, { status: 201 });
+    // Добавляем imageUrl для совместимости с фронтендом
+    const productWithImageUrl = {
+      ...product,
+      imageUrl: product.images.find(img => img.isMain)?.url || product.images[0]?.url || null,
+      weight: product.weight ? product.weight.toString() : null,
+    };
+
+    return NextResponse.json({ product: productWithImageUrl }, { status: 201 });
   } catch (err) {
     console.error("[POST /api/products] Error:", err);
-    // Выводим полное сообщение об ошибке
     const errorMessage = err instanceof Error ? err.message : String(err);
     console.error("[POST /api/products] Error message:", errorMessage);
     return NextResponse.json({ 
