@@ -257,13 +257,54 @@ function MenuContent() {
   const searchParams = useSearchParams();
   const [active, setActive] = useState("all");
   const [search, setSearch] = useState("");
+  const [dishes, setDishes] = useState<Dish[]>(DISHES); // Fallback на статические данные
+  const [loading, setLoading] = useState(true);
+
+  // Загрузка блюд из API при монтировании
+  useEffect(() => {
+    async function loadDishesFromAPI() {
+      try {
+        const res = await fetch('/api/products', { cache: 'no-store' });
+        if (res.ok) {
+          const data = await res.json();
+          // Преобразуем данные из API в формат Dish
+          const apiDishes: Dish[] = data.products.map((p: any) => ({
+            id: parseInt(p.id) || Math.random(),
+            slug: p.category?.slug || 'other',
+            name: p.name,
+            desc: p.description || '',
+            price: p.price,
+            weight: p.weight || '',
+            rating: 4.7, // Можно добавить в API
+            reviews: 0,  // Можно добавить в API
+            tag: p.isNew ? 'Новинка' : p.isHit ? 'Хит' : null,
+            accent: '#f97316',
+          }));
+          
+          if (apiDishes.length > 0) {
+            console.log('✓ Loaded dishes from API:', apiDishes.length);
+            setDishes(apiDishes);
+          } else {
+            console.log('⚠️ No dishes from API, using static data');
+          }
+        }
+      } catch (error) {
+        console.error('Error loading dishes from API:', error);
+        console.log('⚠️ Using static fallback data');
+      } finally {
+        setLoading(false);
+      }
+    }
+    
+    loadDishesFromAPI();
+  }, []);
 
   useEffect(() => {
     const cat = searchParams.get("category");
     if (cat) setActive(cat);
   }, [searchParams]);
 
-  const filtered = DISHES.filter((d) => {
+  const filtered = dishes.filter((d) => {
     const matchCat    = active === "all" || d.slug === active;
     const q           = search.toLowerCase();
     const matchSearch = !q || d.name.toLowerCase().includes(q) || d.desc.toLowerCase().includes(q);
