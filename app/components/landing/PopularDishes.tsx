@@ -8,9 +8,9 @@ import { useCart } from "../../providers/CartProvider";
 
 // White-background sushi photos matching the reference style
 const DISH_IMAGES: Record<number, string> = {
-  101: "https://images.unsplash.com/photo-1617196034183-421b4040ed20?w=600&h=450&q=90&auto=format&fit=crop",
-  102: "https://images.unsplash.com/photo-1617196034099-e66a539bad0c?w=600&h=450&q=90&auto=format&fit=crop",
-  103: "https://images.unsplash.com/photo-1617196035902-e1ec63093e8f?w=600&h=450&q=90&auto=format&fit=crop",
+  101: "https://i.pinimg.com/736x/cc/8d/f3/cc8df3edb1ce4206a28789893c5b63b7.jpg", // Philadelphia
+  102: "https://i.pinimg.com/736x/cc/8d/f3/cc8df3edb1ce4206a28789893c5b63b7.jpg", // California
+  103: "https://i.pinimg.com/736x/cc/8d/f3/cc8df3edb1ce4206a28789893c5b63b7.jpg", // Classic set
   104: "https://images.unsplash.com/photo-1611143669185-af224c5e3252?w=600&h=450&q=90&auto=format&fit=crop",
   105: "https://images.unsplash.com/photo-1547592166-23ac45744acd?w=600&h=450&q=90&auto=format&fit=crop",
   106: "https://images.unsplash.com/photo-1603133872878-684f208fb84b?w=600&h=450&q=90&auto=format&fit=crop",

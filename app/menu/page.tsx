@@ -15,8 +15,8 @@ import { FullPageLoader } from "../components/SushiLoader";
 // ─────────────────────────────────────────────────────────────────────────────
 const DISH_IMAGES: Record<number, string> = {
   // Rolls
-  1:  "https://images.unsplash.com/photo-1617196034183-421b4040ed20?w=600&h=450&q=90&auto=format&fit=crop", // Philadelphia
-  2:  "https://images.unsplash.com/photo-1617196034099-e66a539bad0c?w=600&h=450&q=90&auto=format&fit=crop", // California
+  1:  "https://i.pinimg.com/736x/cc/8d/f3/cc8df3edb1ce4206a28789893c5b63b7.jpg", // Philadelphia
+  2:  "https://i.pinimg.com/736x/cc/8d/f3/cc8df3edb1ce4206a28789893c5b63b7.jpg", // California
   7:  "https://images.unsplash.com/photo-1617196034302-a5f1ccbbd1f2?w=600&h=450&q=90&auto=format&fit=crop", // Dragon
   8:  "https://images.unsplash.com/photo-1617196035018-30a7c4ec3efe?w=600&h=450&q=90&auto=format&fit=crop", // Tempura
   18: "https://images.unsplash.com/photo-1562802378-063ec186a863?w=600&h=450&q=90&auto=format&fit=crop",    // Rainbow
@@ -26,7 +26,7 @@ const DISH_IMAGES: Record<number, string> = {
   10: "https://images.unsplash.com/photo-1617196035230-7de38fc4dc23?w=600&h=450&q=90&auto=format&fit=crop", // Eel nigiri
   // Sets
   3:  "https://images.unsplash.com/photo-1617196035902-e1ec63093e8f?w=600&h=450&q=90&auto=format&fit=crop", // Big set
-  11: "https://images.unsplash.com/photo-1617196035672-c39d0b44fae4?w=600&h=450&q=90&auto=format&fit=crop", // Classic set
+  11: "https://i.pinimg.com/736x/cc/8d/f3/cc8df3edb1ce4206a28789893c5b63b7.jpg", // Classic set
   // Hot dishes
   5:  "https://images.unsplash.com/photo-1547592166-23ac45744acd?w=600&h=450&q=90&auto=format&fit=crop",    // Tom Yam
   12: "https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=600&h=450&q=90&auto=format&fit=crop", // Ramen
