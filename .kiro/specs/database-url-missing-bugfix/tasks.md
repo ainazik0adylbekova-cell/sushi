@@ -1,0 +1,93 @@
+# Implementation Plan
+
+- [ ] 1. Write bug condition exploration test
+  - **Property 1: Bug Condition** - Missing DATABASE_URL Detection
+  - **CRITICAL**: This test MUST FAIL on unfixed code - failure confirms the bug exists
+  - **DO NOT attempt to fix the test or the code when it fails**
+  - **NOTE**: This test encodes the expected behavior - it will validate the fix when it passes after implementation
+  - **GOAL**: Surface counterexamples that demonstrate the bug exists (cryptic error messages, late detection)
+  - **Scoped PBT Approach**: Scope the property to concrete failing cases (DATABASE_URL undefined, empty string, whitespace-only)
+  - Test implementation details from Bug Condition in design:
+    - Test Case 1: Unset `process.env.DATABASE_URL`, attempt to import and use `lib/db.ts` for database operation
+    - Test Case 2: Set `process.env.DATABASE_URL = ""`, attempt database operation
+    - Test Case 3: Set `process.env.DATABASE_URL = "   "`, attempt database operation
+    - Test Case 4: Verify error detection timing (should occur late, at first query on unfixed code)
+  - The test assertions should match the Expected Behavior Properties from design:
+    - Assert error message contains "DATABASE_URL environment variable is missing or empty"
+    - Assert error message provides configuration guidance (format: postgresql://USER:PASSWORD@HOST:PORT/DATABASE)
+    - Assert error is logged to console/server logs
+    - Assert error occurs at module load or first access (after fix - currently fails late)
+  - Run test on UNFIXED code
+  - **EXPECTED OUTCOME**: Test FAILS with cryptic error "Environment variable not found: DATABASE_URL" without context or guidance (this is correct - it proves the bug exists)
+  - Document counterexamples found:
+    - Observe the exact error message format
+    - Observe when the error occurs (module load vs first query)
+    - Observe whether error appears in logs or only in responses
+  - Mark task complete when test is written, run, and failure is documented
+  - _Requirements: 2.1, 2.2_
+
+- [ ] 2. Write preservation property tests (BEFORE implementing fix)
+  - **Property 2: Preservation** - Valid DATABASE_URL Operations Unchanged
+  - **IMPORTANT**: Follow observation-first methodology
+  - Observe behavior on UNFIXED code with valid DATABASE_URL configured:
+    - Observe: User registration with valid credentials successfully creates user, hashes password, assigns role
+    - Observe: Duplicate email registration returns 409 error with "Этот email уже зарегистрирован"
+    - Observe: Invalid input (missing name, bad email format, short password) returns appropriate 400 errors
+    - Observe: All Prisma query types (findUnique, findFirst, create, update, delete) execute successfully
+    - Observe: Development mode uses ["query", "error", "warn"] logging, production uses ["error"]
+  - Write property-based tests capturing observed behavior patterns from Preservation Requirements:
+    - **PBT 1**: For all valid PostgreSQL connection strings in DATABASE_URL format, Prisma Client instantiates successfully
+    - **PBT 2**: For all valid user registration inputs (name, email, password) with valid DATABASE_URL, user creation succeeds with identical behavior to original (password hashed, role set, session established)
+    - **PBT 3**: For all Prisma query operations (CRUD types) with valid DATABASE_URL, queries execute with identical results to original
+    - **PBT 4**: For all validation error scenarios (missing fields, invalid formats) with valid DATABASE_URL, errors return identical status codes and messages to original
+    - **PBT 5**: For duplicate email scenarios with valid DATABASE_URL, 409 conflict response is identical to original
+  - Property-based testing generates many test cases for stronger guarantees
+  - Run tests on UNFIXED code
+  - **EXPECTED OUTCOME**: Tests PASS (this confirms baseline behavior to preserve)
+  - Mark task complete when tests are written, run, and passing on unfixed code
+  - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5_
+
+- [ ] 3. Fix for DATABASE_URL missing environment variable
+
+  - [ ] 3.1 Implement the fix in lib/db.ts
+    - Add environment variable validation before PrismaClient instantiation
+    - Check if `process.env.DATABASE_URL` is undefined, empty string, or whitespace-only
+    - Throw clear, actionable error with specific guidance when DATABASE_URL is missing:
+      - Error message format: "DATABASE_URL environment variable is missing or empty. Please configure DATABASE_URL in your .env file. Format: postgresql://USER:PASSWORD@HOST:PORT/DATABASE?sslmode=require"
+    - Add console.error logging immediately when error is detected for visibility in server logs
+    - Maintain existing global singleton pattern for development hot reload prevention
+    - Preserve existing logging configuration (development: ["query", "error", "warn"], production: ["error"])
+    - Ensure validation occurs early (at module load or first Prisma Client access, not delayed until first query)
+    - _Bug_Condition: isBugCondition(input) where (process.env.DATABASE_URL IS undefined OR process.env.DATABASE_URL IS empty string) AND prismaClientIsInstantiated AND databaseOperationIsAttempted_
+    - _Expected_Behavior: For any application state where DATABASE_URL is not set or is empty, throw clear error message that explicitly states "DATABASE_URL environment variable is missing or empty" with configuration guidance_
+    - _Preservation: All Prisma queries, user registration with valid credentials, input validation, duplicate email handling, and logging configuration must remain unchanged when DATABASE_URL is properly configured_
+    - _Requirements: 2.1, 2.2, 3.1, 3.2, 3.3, 3.4, 3.5_
+
+  - [ ] 3.2 Verify bug condition exploration test now passes
+    - **Property 1: Expected Behavior** - Clear Error Message with Guidance
+    - **IMPORTANT**: Re-run the SAME test from task 1 - do NOT write a new test
+    - The test from task 1 encodes the expected behavior (clear error message with guidance)
+    - When this test passes, it confirms the expected behavior is satisfied (early detection, clear message, logged error)
+    - Run bug condition exploration test from step 1
+    - **EXPECTED OUTCOME**: Test PASSES (confirms bug is fixed - clear error message now appears, error is detected early)
+    - _Requirements: 2.1, 2.2_
+
+  - [ ] 3.3 Verify preservation tests still pass
+    - **Property 2: Preservation** - Valid DATABASE_URL Operations Unchanged
+    - **IMPORTANT**: Re-run the SAME tests from task 2 - do NOT write new tests
+    - Run preservation property tests from step 2:
+      - Verify user registration still works identically with valid DATABASE_URL
+      - Verify duplicate email handling unchanged (409 with Russian message)
+      - Verify input validation errors unchanged (400 responses)
+      - Verify all Prisma query types work identically
+      - Verify logging configuration unchanged
+    - **EXPECTED OUTCOME**: Tests PASS (confirms no regressions - all behavior preserved when DATABASE_URL is valid)
+    - Confirm all tests still pass after fix (no regressions introduced)
+    - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5_
+
+- [ ] 4. Checkpoint - Ensure all tests pass
+  - Ensure all tests pass, ask the user if questions arise.
+  - Verify bug condition test passes (clear error message for missing DATABASE_URL)
+  - Verify preservation tests pass (all operations unchanged with valid DATABASE_URL)
+  - Confirm error messages appear in server logs for operator visibility
+  - Confirm application fails fast (early detection) rather than late (first query)

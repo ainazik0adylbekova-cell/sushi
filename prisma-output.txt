@@ -1,5 +1,0 @@
-
-> syshi@0.1.0 db:generate
-> prisma generate
-
-Prisma schema loaded from prisma\schema.prisma

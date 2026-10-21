@@ -1,0 +1,132 @@
+# Implementation Plan
+
+- [ ] 1. Write bug condition exploration test
+  - **Property 1: Bug Condition** - Service Unavailability Returns 500 Instead of 503
+  - **CRITICAL**: This test MUST FAIL on unfixed code - failure confirms the bug exists
+  - **DO NOT attempt to fix the test or the code when it fails**
+  - **NOTE**: This test encodes the expected behavior - it will validate the fix when it passes after implementation
+  - **GOAL**: Surface counterexamples that demonstrate the bug exists (500 errors with missing/placeholder env vars)
+  - **Scoped PBT Approach**: For deterministic bugs, scope the property to the concrete failing case(s) to ensure reproducibility
+  - Test that API endpoints return 500 errors when called with missing or placeholder environment variables
+  - Test scenarios from Bug Condition specification:
+    - `/api/finik/create-payment` with `FINIK_API_KEY="your-api-key-here"` (placeholder)
+    - `/api/finik/create-payment` with `FINIK_API_KEY=""` (empty string)
+    - `/api/finik/create-payment` with `FINIK_ACCOUNT_ID` undefined (missing)
+    - `/api/finik/create-payment` with both credentials missing
+  - The test assertions should verify HTTP 503 status and user-friendly error messages (from Expected Behavior Properties)
+  - Run test on UNFIXED code
+  - **EXPECTED OUTCOME**: Test FAILS (this is correct - it proves the bug exists with 500 errors)
+  - Document counterexamples found (e.g., "Placeholder credentials return 500 instead of 503")
+  - Mark task complete when test is written, run, and failure is documented
+  - _Requirements: 2.1, 2.2, 2.3_
+
+- [ ] 2. Write preservation property tests (BEFORE implementing fix)
+  - **Property 2: Preservation** - Valid Credentials and Bypass Logic Continue Working
+  - **IMPORTANT**: Follow observation-first methodology
+  - Observe behavior on UNFIXED code for non-buggy inputs (valid credentials, bypass scenarios)
+  - Write property-based tests capturing observed behavior patterns from Preservation Requirements:
+    - Valid Finik credentials: payment creation succeeds with proper `FINIK_API_KEY` and `FINIK_ACCOUNT_ID`
+    - Telegram bypass logic: admin login works when `chatId` is null (bypass activates)
+    - Valid Telegram flow: admin login sends code via Telegram when properly configured
+    - Validation errors: missing orderId, invalid email still return 400/401 as expected
+  - Property-based testing generates many test cases for stronger guarantees
+  - Run tests on UNFIXED code
+  - **EXPECTED OUTCOME**: Tests PASS (this confirms baseline behavior to preserve)
+  - Mark task complete when tests are written, run, and passing on unfixed code
+  - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5_
+
+- [ ] 3. Fix for environment variable validation and graceful degradation
+
+  - [ ] 3.1 Create centralized environment variable validation utilities
+    - Create new file `lib/env-validation.ts`
+    - Implement `isPlaceholderValue()` function to detect placeholder patterns
+    - Add placeholder patterns list: "your-api-key-here", "your_api_key_here", "your-account-id-here", etc.
+    - Implement `ServiceUnavailableError` custom error class
+    - Implement `validateServiceCredentials()` function for credential validation
+    - _Bug_Condition: isBugCondition(input) where envVars contain placeholders or are missing_
+    - _Expected_Behavior: Return true for placeholder values, enable early detection before API calls_
+    - _Preservation: No existing code depends on this new file, so no preservation concerns_
+    - _Requirements: 2.1, 2.2_
+
+  - [ ] 3.2 Update Finik payment library with placeholder detection
+    - Modify `lib/finik.ts` - `createFinikPayment` function
+    - Import `isPlaceholderValue` and `ServiceUnavailableError` from `lib/env-validation.ts`
+    - Add placeholder detection for `FINIK_API_KEY` and `FINIK_ACCOUNT_ID`
+    - Replace simple `!FINIK_API_KEY` check with comprehensive validation
+    - Throw `ServiceUnavailableError` when credentials are missing or placeholders
+    - Enhance error messages to distinguish missing vs misconfigured credentials
+    - Add structured logging for configuration validation (without exposing credentials)
+    - _Bug_Condition: isBugCondition(input) where FINIK credentials are missing or placeholders_
+    - _Expected_Behavior: Throw ServiceUnavailableError with clear message for route to catch_
+    - _Preservation: Valid credentials must continue to work exactly as before_
+    - _Requirements: 2.1, 2.2, 2.3, 3.1_
+
+  - [ ] 3.3 Update Finik payment API route error handling
+    - Modify `app/api/finik/create-payment/route.ts` - POST handler
+    - Add detection for `ServiceUnavailableError` in catch block
+    - Return HTTP 503 for `ServiceUnavailableError` instead of 500
+    - Return user-friendly message: "Payment service is currently unavailable. Please try again later or contact support."
+    - Preserve existing error logging with enhanced context
+    - Keep returning 500 for other non-configuration errors
+    - _Bug_Condition: isBugCondition(input) where Finik endpoint called with bad credentials_
+    - _Expected_Behavior: Return HTTP 503 with user-friendly error message_
+    - _Preservation: All other error types (validation, runtime) return same status codes_
+    - _Requirements: 2.2, 2.3, 3.1_
+
+  - [ ] 3.4 Update Telegram library with placeholder detection
+    - Modify `lib/telegram.ts` - `sendTelegramMessage` function
+    - Import `isPlaceholderValue` from `lib/env-validation.ts`
+    - Add placeholder detection for `TELEGRAM_BOT_TOKEN`
+    - Return `{ ok: false, error: "Bot token not configured" }` if placeholder detected
+    - Enhance error messages to distinguish missing vs placeholder tokens
+    - Add logging: "TELEGRAM_BOT_TOKEN contains placeholder value" or "is missing"
+    - Preserve existing return structure `{ ok: false }` for graceful error handling
+    - _Bug_Condition: isBugCondition(input) where TELEGRAM_BOT_TOKEN is missing or placeholder_
+    - _Expected_Behavior: Return graceful error object without throwing exception_
+    - _Preservation: Valid bot tokens must work exactly as before, existing error structure unchanged_
+    - _Requirements: 2.1, 2.2, 3.2_
+
+  - [ ] 3.5 Update admin send-code route with placeholder detection
+    - Modify `app/api/admin/send-code/route.ts` - POST handler
+    - Import `isPlaceholderValue` from `lib/env-validation.ts`
+    - Add placeholder detection for `TELEGRAM_BOT_TOKEN` before attempting to get chatId
+    - Treat placeholder token same as missing token - activate bypass logic
+    - **CRITICAL**: Preserve existing bypass logic (lines 56-66) exactly as is - NO CHANGES
+    - Add enhanced logging: "Telegram not configured, activating bypass authentication"
+    - _Bug_Condition: isBugCondition(input) where TELEGRAM_BOT_TOKEN is placeholder but bypass not activated_
+    - _Expected_Behavior: Activate bypass logic immediately when token is placeholder_
+    - _Preservation: Existing bypass logic when chatId is null MUST remain completely unchanged_
+    - _Requirements: 2.1, 3.2, 3.3_
+
+  - [ ] 3.6 Verify bug condition exploration test now passes
+    - **Property 1: Expected Behavior** - Service Unavailability Returns 503 with User-Friendly Messages
+    - **IMPORTANT**: Re-run the SAME test from task 1 - do NOT write a new test
+    - The test from task 1 encodes the expected behavior
+    - When this test passes, it confirms the expected behavior is satisfied
+    - Run bug condition exploration test from step 1
+    - Verify all scenarios now return HTTP 503 instead of 500:
+      - Placeholder credentials return 503
+      - Empty credentials return 503
+      - Missing credentials return 503
+    - Verify error messages are user-friendly and don't expose credentials
+    - **EXPECTED OUTCOME**: Test PASSES (confirms bug is fixed)
+    - _Requirements: 2.2, 2.3_
+
+  - [ ] 3.7 Verify preservation tests still pass
+    - **Property 2: Preservation** - Valid Credentials and Bypass Logic Continue Working
+    - **IMPORTANT**: Re-run the SAME tests from task 2 - do NOT write new tests
+    - Run preservation property tests from step 2
+    - Verify all preservation scenarios still work:
+      - Valid Finik credentials still create payments successfully
+      - Telegram bypass logic still activates when chatId is null
+      - Valid Telegram configuration still sends codes
+      - Validation errors still return appropriate status codes (400/401)
+    - **EXPECTED OUTCOME**: Tests PASS (confirms no regressions)
+    - Confirm all tests still pass after fix (no regressions)
+
+- [ ] 4. Checkpoint - Ensure all tests pass
+  - Run all tests (bug condition + preservation)
+  - Verify no regressions in existing functionality
+  - Verify error messages are user-friendly and don't expose credentials
+  - Verify logs contain sufficient debugging information
+  - If any issues arise, ask the user for guidance
