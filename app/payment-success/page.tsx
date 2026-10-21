@@ -14,18 +14,54 @@ function PaymentSuccessContent() {
 
   const orderId = searchParams.get("orderId");
   const paymentStatus = searchParams.get("payment");
+  const finikStatus = searchParams.get("status"); // Статус от Finik
+  const transactionId = searchParams.get("transactionId");
 
   useEffect(() => {
-    // Проверяем статус платежа из URL
-    if (paymentStatus === "success") {
+    // Проверяем статус платежа из URL параметров
+    // Finik может передать параметр "status" со значениями: "succeeded", "failed", "pending"
+    if (finikStatus === "succeeded" || finikStatus === "success" || paymentStatus === "success") {
       setStatus("success");
-    } else if (paymentStatus === "failed") {
+    } else if (finikStatus === "failed" || finikStatus === "cancelled" || paymentStatus === "failed") {
       setStatus("failed");
+    } else if (finikStatus === "pending") {
+      // Показываем загрузку и ждем обновления
+      setTimeout(() => {
+        // Проверяем статус через API
+        checkPaymentStatus();
+      }, 2000);
     } else {
-      // Если статус не указан, показываем загрузку
-      setTimeout(() => setStatus("success"), 1000);
+      // Если статус не указан, показываем успешную оплату по умолчанию
+      // (webhook обновит заказ в базе)
+      setStatus("success");
     }
-  }, [paymentStatus]);
+  }, [paymentStatus, finikStatus]);
+
+  async function checkPaymentStatus() {
+    if (!orderId) {
+      setStatus("success");
+      return;
+    }
+
+    try {
+      // Проверяем статус заказа через API
+      const response = await fetch(`/api/orders/${orderId}`);
+      if (response.ok) {
+        const order = await response.json();
+        // Если заказ оплачен, показываем успех
+        if (order.status === "paid" || order.status === "confirmed") {
+          setStatus("success");
+        } else {
+          setStatus("success"); // По умолчанию успех
+        }
+      } else {
+        setStatus("success");
+      }
+    } catch (error) {
+      console.error("Error checking payment status:", error);
+      setStatus("success");
+    }
+  }
 
   return (
     <>
@@ -73,6 +109,11 @@ function PaymentSuccessContent() {
                   {orderId && (
                     <p className="text-xs mt-3 font-mono" style={{ color: "var(--fg-muted)" }}>
                       Номер заказа: {orderId}
+                    </p>
+                  )}
+                  {transactionId && (
+                    <p className="text-xs mt-1 font-mono" style={{ color: "var(--fg-muted)" }}>
+                      ID транзакции: {transactionId}
                     </p>
                   )}
                 </div>

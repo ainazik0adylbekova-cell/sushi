@@ -42,6 +42,7 @@ export async function POST(request: NextRequest) {
       status: body.status,
       amount: body.amount,
       transactionId: body.transactionId,
+      redirectUrl: body.fields?.success_redirect_url,
     });
 
     // 4. Подготовка заголовков для верификации

@@ -133,7 +133,7 @@ export async function createFinikPayment(data: CreatePaymentData): Promise<strin
     Amount: data.amount,
     CardType: 'FINIK_QR',
     PaymentId: paymentId,
-    RedirectUrl: `${APP_URL}/payment-success?orderId=${data.orderId}&payment=success`,
+    RedirectUrl: `${APP_URL}/payment-success?orderId=${data.orderId}`,
     Data: {
       accountId: FINIK_ACCOUNT_ID,
       merchantCategoryCode: '0742',
