@@ -23,7 +23,6 @@ export default function Footer() {
       title: t.footerInfo,
       links: [
         { label: t.navAbout,       href: "/about"     },
-        { label: "Наши филиалы",   href: "/branches"  },
         { label: t.navContacts,    href: "/contacts"  },
         { label: t.footerDelivery, href: "/delivery"  },
         { label: t.footerPrivacy,  href: "/privacy"   },

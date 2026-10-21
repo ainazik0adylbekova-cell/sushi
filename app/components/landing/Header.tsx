@@ -64,7 +64,6 @@ export default function Header() {
     { label: t.navHome,     href: "/" },
     { label: t.navMenu,     href: "/menu" },
     { label: t.navAbout,    href: "/about" },
-    { label: "Филиалы",     href: "/branches" },
     { label: "Отзывы",      href: "/#reviews" },
     { label: t.navContacts, href: "/contacts" },
   ];
