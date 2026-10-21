@@ -10,39 +10,9 @@ import { useCart } from "../providers/CartProvider";
 import { FullPageLoader } from "../components/SushiLoader";
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Image map — clean white/light-background food photography.
-// All URLs are stable Unsplash CDN links with explicit crop parameters.
+// Fallback image для блюд без картинки
 // ─────────────────────────────────────────────────────────────────────────────
-const DISH_IMAGES: Record<number, string> = {
-  // Rolls
-  1:  "https://i.pinimg.com/736x/cc/8d/f3/cc8df3edb1ce4206a28789893c5b63b7.jpg", // Philadelphia
-  2:  "https://i.pinimg.com/736x/cc/8d/f3/cc8df3edb1ce4206a28789893c5b63b7.jpg", // California
-  7:  "https://images.unsplash.com/photo-1617196034302-a5f1ccbbd1f2?w=600&h=450&q=90&auto=format&fit=crop", // Dragon
-  8:  "https://images.unsplash.com/photo-1617196035018-30a7c4ec3efe?w=600&h=450&q=90&auto=format&fit=crop", // Tempura
-  18: "https://images.unsplash.com/photo-1562802378-063ec186a863?w=600&h=450&q=90&auto=format&fit=crop",    // Rainbow
-  // Sushi / Nigiri
-  4:  "https://images.unsplash.com/photo-1611143669185-af224c5e3252?w=600&h=450&q=90&auto=format&fit=crop", // Salmon nigiri
-  9:  "https://images.unsplash.com/photo-1640671894829-e3fd79ccb0f9?w=600&h=450&q=90&auto=format&fit=crop", // Tuna nigiri
-  10: "https://images.unsplash.com/photo-1617196035230-7de38fc4dc23?w=600&h=450&q=90&auto=format&fit=crop", // Eel nigiri
-  // Sets
-  3:  "https://images.unsplash.com/photo-1617196035902-e1ec63093e8f?w=600&h=450&q=90&auto=format&fit=crop", // Big set
-  11: "https://i.pinimg.com/736x/cc/8d/f3/cc8df3edb1ce4206a28789893c5b63b7.jpg", // Classic set
-  // Hot dishes
-  5:  "https://images.unsplash.com/photo-1547592166-23ac45744acd?w=600&h=450&q=90&auto=format&fit=crop",    // Tom Yam
-  12: "https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=600&h=450&q=90&auto=format&fit=crop", // Ramen
-  // Noodles / Wok
-  6:  "https://images.unsplash.com/photo-1603133872878-684f208fb84b?w=600&h=450&q=90&auto=format&fit=crop", // Wok chicken
-  13: "https://images.unsplash.com/photo-1569050467447-ce54b3bbc37d?w=600&h=450&q=90&auto=format&fit=crop", // Wok beef
-  // Snacks
-  14: "https://images.unsplash.com/photo-1563245372-f21724e3856d?w=600&h=450&q=90&auto=format&fit=crop",    // Gyoza
-  15: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=600&h=450&q=90&auto=format&fit=crop", // Edamame / veg
-  // Drinks
-  16: "https://images.unsplash.com/photo-1515823662972-da6a2e4d3d18?w=600&h=450&q=90&auto=format&fit=crop", // Matcha
-  17: "https://images.unsplash.com/photo-1556679343-c7306c1976bc?w=600&h=450&q=90&auto=format&fit=crop",    // Lemonade
-};
-
-// Reliable fallback — classic Philadelphia roll, always works
-const FALLBACK_IMAGE = "https://images.unsplash.com/photo-1617196034183-421b4040ed20?w=600&h=450&q=90&auto=format&fit=crop";
+const FALLBACK_IMAGE = "/rolls.png"; // Используем локальное изображение
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Static menu data (replace with API when ready)
@@ -69,6 +39,7 @@ interface Dish {
   reviews: number;
   tag: string | null;
   accent: string;
+  imageUrl?: string; // Добавляем поле для картинки
 }
 
 const DISHES: Dish[] = [
@@ -93,11 +64,11 @@ const DISHES: Dish[] = [
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Dish image with fallback
+// Dish image with fallback - использует картинки из базы данных
 // ─────────────────────────────────────────────────────────────────────────────
-function DishImage({ id, name, accent }: { id: number; name: string; accent: string }) {
+function DishImage({ imageUrl, name, accent }: { imageUrl?: string; name: string; accent: string }) {
   const [errored, setErrored] = useState(false);
-  const src = errored ? FALLBACK_IMAGE : (DISH_IMAGES[id] ?? FALLBACK_IMAGE);
+  const src = errored || !imageUrl ? FALLBACK_IMAGE : imageUrl;
 
   return (
     <img
@@ -180,7 +151,7 @@ function DishCard({ dish }: { dish: Dish }) {
             transition: "transform 0.35s ease",
           }}
         >
-          <DishImage id={dish.id} name={dish.name} accent={dish.accent} />
+          <DishImage imageUrl={dish.imageUrl} name={dish.name} accent={dish.accent} />
         </div>
         {dish.tag && (
           <span
@@ -274,11 +245,12 @@ function MenuContent() {
             name: p.name,
             desc: p.description || '',
             price: p.price,
-            weight: p.weight || '',
-            rating: 4.7, // Можно добавить в API
-            reviews: 0,  // Можно добавить в API
-            tag: p.isNew ? 'Новинка' : p.isHit ? 'Хит' : null,
+            weight: p.weight ? `${p.weight} г` : (p.piecesCount ? `${p.piecesCount} шт` : ''),
+            rating: 4.7,
+            reviews: 0,
+            tag: p.isPopular ? 'Хит' : (p.isNew ? 'Новинка' : null),
             accent: '#f97316',
+            imageUrl: p.images && p.images.length > 0 ? p.images[0].url : undefined, // Берем первую картинку из базы
           }));
           
           if (apiDishes.length > 0) {
