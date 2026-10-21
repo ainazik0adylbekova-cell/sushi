@@ -1,42 +1,49 @@
-import { NextResponse } from "next/server";
+﻿import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 
 export async function GET() {
   try {
-    console.log("[TEST-DB] Проверка подключения к БД...");
-
+    console.log("[TEST] Testing database connection...");
+    
     // Проверяем подключение
     await prisma.$connect();
-    console.log("[TEST-DB] ✅ Подключение успешно");
-
-    // Получаем все роли
+    console.log("[TEST] Connected to database");
+    
+    // Проверяем существующие роли
     const roles = await prisma.role.findMany();
-    console.log("[TEST-DB] Найдено ролей:", roles.length);
-
-    // Получаем количество пользователей
-    const userCount = await prisma.user.count();
-    console.log("[TEST-DB] Пользователей в БД:", userCount);
-
+    console.log("[TEST] Found roles:", roles);
+    
+    // Если ролей нет - создаем
+    if (roles.length === 0) {
+      console.log("[TEST] No roles found, creating default role...");
+      const newRole = await prisma.role.create({
+        data: {
+          name: "Пользователь",
+          description: "Обычный пользователь"
+        }
+      });
+      console.log("[TEST] Created role:", newRole);
+      
+      return NextResponse.json({
+        success: true,
+        message: "Role created",
+        role: newRole,
+        allRoles: [newRole]
+      });
+    }
+    
     return NextResponse.json({
       success: true,
-      message: "База данных работает!",
-      data: {
-        roles: roles,
-        userCount: userCount,
-        prismaVersion: "6.8.2"
-      }
+      message: "Database connected",
+      roles: roles
     });
+    
   } catch (error: any) {
-    console.error("[TEST-DB] ❌ Ошибка:", error);
-    return NextResponse.json(
-      {
-        error: "Ошибка подключения к базе данных",
-        details: error.message,
-        stack: error.stack
-      },
-      { status: 500 }
-    );
-  } finally {
-    await prisma.$disconnect();
+    console.error("[TEST] Error:", error);
+    return NextResponse.json({
+      success: false,
+      error: error.message,
+      stack: error.stack
+    }, { status: 500 });
   }
 }
