@@ -8,6 +8,7 @@ import { CartProvider }     from "./providers/CartProvider";
 import { AuthProvider }     from "./providers/AuthProvider";
 import CartDrawer           from "./components/landing/CartDrawer";
 import AiChat               from "./components/AiChat";
+import PWAInstaller         from "./components/PWAInstaller";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -23,6 +24,28 @@ export const metadata: Metadata = {
   description:
     "Свежие суши, роллы, сеты и паназиатские блюда с доставкой по Бишкеку. Быстро, вкусно, удобно.",
   keywords: "суши, роллы, доставка, паназиатская кухня, суши жейм, Бишкек, Кыргызстан",
+  manifest: "/manifest.json",
+  themeColor: "#ff4d00",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Суши Жейм",
+  },
+  icons: {
+    icon: [
+      { url: "/icons/icon-192x192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icons/icon-512x512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: [
+      { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+    ],
+  },
+  viewport: {
+    width: "device-width",
+    initialScale: 1,
+    maximumScale: 5,
+    userScalable: true,
+  },
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
@@ -36,6 +59,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
                 {children}
                 <CartDrawer />
                 <AiChat />
+                <PWAInstaller />
               </CartProvider>
             </AuthProvider>
           </LanguageProvider>
