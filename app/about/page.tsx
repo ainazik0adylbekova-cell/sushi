@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Header from "../components/landing/Header";
 import Footer from "../components/landing/Footer";
 import About from "../components/landing/About";
+import Branches from "../components/landing/Branches";
 import Reviews from "../components/landing/Reviews";
 
 export const metadata: Metadata = {
@@ -15,6 +16,7 @@ export default function AboutPage() {
       <Header />
       <main className="pt-16">
         <About />
+        <Branches />
         <Reviews />
       </main>
       <Footer />

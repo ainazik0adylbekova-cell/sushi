@@ -164,22 +164,6 @@ export default function Reviews() {
               }}
               onClick={() => setPaused(true)}
             >
-              {/* Progress bar */}
-              <div
-                className="absolute top-0 left-0 right-0 h-[3px] rounded-t-3xl overflow-hidden"
-                style={{ background: `${BRAND}28` }}
-              >
-                <div
-                  key={progressKeyRef.current}
-                  style={{
-                    height: "100%",
-                    background: BRAND,
-                    width: paused ? "0%" : "100%",
-                    transition: paused ? "none" : `width ${INTERVAL_MS}ms linear`,
-                  }}
-                />
-              </div>
-
               {/* Quote decoration */}
               <Quote
                 className="absolute top-5 right-5 w-7 h-7"
