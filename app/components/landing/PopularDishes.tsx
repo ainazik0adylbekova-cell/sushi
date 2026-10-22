@@ -6,16 +6,16 @@ import { Plus, Star, ChevronRight } from "lucide-react";
 import { useLang } from "../../providers/LanguageProvider";
 import { useCart } from "../../providers/CartProvider";
 
-// Качественные фотографии блюд из Unsplash (бесплатные, высокое разрешение)
+// Фотографии блюд из папки public (загруженные вами)
 const DISH_IMAGES: Record<number, string> = {
-  101: "https://images.unsplash.com/photo-1579584425555-c3ce17fd4351?w=800&q=80", // Philadelphia roll
-  102: "https://images.unsplash.com/photo-1617196034796-73dfa7b1fd56?w=800&q=80", // California roll
-  103: "https://images.unsplash.com/photo-1611143669185-af224c5e3252?w=800&q=80", // Sushi set
-  104: "https://images.unsplash.com/photo-1580822184713-fc5400e7fe10?w=800&q=80", // Salmon sushi
-  105: "https://images.unsplash.com/photo-1547928576-b259fe7a73f7?w=800&q=80", // Tom Yam soup
-  106: "https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=800&q=80", // Wok with chicken
+  101: "/filadel.jpg",        // Ролл Филадельфия
+  102: "/colif.jpg",          // Ролл Калифорния
+  103: "/set.classik.jpg",    // Сет Классика
+  104: "/sushi.jpg",          // Суши с лососем
+  105: "/hot.png",            // Том Ям (временно hot.png)
+  106: "/wok.png",            // Wok с курицей
 };
-const FALLBACK = "https://images.unsplash.com/photo-1617196034183-421b4040ed20?w=800&q=80";
+const FALLBACK = "/rolls.png"; // Fallback из public
 
 function DishPhoto({ id, name }: { id: number; name: string }) {
   const [errored, setErrored] = useState(false);
