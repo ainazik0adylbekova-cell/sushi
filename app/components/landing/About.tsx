@@ -259,7 +259,6 @@ function GlassCard({ feature, index }: { feature: any; index: number }) {
           display: flex;
           align-items: center;
           justify-center;
-          border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         .glass-card__title {
