@@ -6,16 +6,16 @@ import { ArrowRight, Plus, Star } from "lucide-react";
 import { useLang } from "../../providers/LanguageProvider";
 import { useCart } from "../../providers/CartProvider";
 
-// Фотографии блюд из папки public (загруженные вами)
+// Фотографии блюд из папки public (ваши загруженные файлы)
 const DISH_IMAGES: Record<number, string> = {
-  1: "/filadel.jpg",        // Ролл Филадельфия
-  2: "/colif.jpg",          // Ролл Калифорния
-  3: "/set.classik.jpg",    // Сет Классика
-  4: "/sushi.jpg",          // Суши с лососем
-  5: "/hot.png",            // Том Ям (временно hot.png)
-  6: "/wok.png",            // Wok с курицей
+  1: "/filadel.jpg",        // Ролл Филадельфия ✅
+  2: "/colif.jpg",          // Ролл Калифорния ✅
+  3: "/set.classik.jpg",    // Сет Классика ✅
+  4: "/sushi.jpg",          // Суши с лососем ✅
+  5: "/hot.png",            // Том Ям (используем hot.png)
+  6: "/wok.png",            // Wok с курицей (используем wok.png если нет своего)
 };
-const FALLBACK = "/rolls.png"; // Fallback из public
+const FALLBACK = "/rolls.png";
 
 function DishPhoto({ id, name }: { id: number; name: string }) {
   const [errored, setErrored] = useState(false);
