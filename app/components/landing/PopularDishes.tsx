@@ -6,16 +6,16 @@ import { Plus, Star, ChevronRight } from "lucide-react";
 import { useLang } from "../../providers/LanguageProvider";
 import { useCart } from "../../providers/CartProvider";
 
-// White-background sushi photos matching the reference style
+// Качественные фотографии блюд из Unsplash (бесплатные, высокое разрешение)
 const DISH_IMAGES: Record<number, string> = {
-  101: "https://i.pinimg.com/736x/cc/8d/f3/cc8df3edb1ce4206a28789893c5b63b7.jpg", // Philadelphia
-  102: "https://i.pinimg.com/736x/cc/8d/f3/cc8df3edb1ce4206a28789893c5b63b7.jpg", // California
-  103: "https://i.pinimg.com/736x/cc/8d/f3/cc8df3edb1ce4206a28789893c5b63b7.jpg", // Classic set
-  104: "https://images.unsplash.com/photo-1611143669185-af224c5e3252?w=600&h=450&q=90&auto=format&fit=crop",
-  105: "https://images.unsplash.com/photo-1547592166-23ac45744acd?w=600&h=450&q=90&auto=format&fit=crop",
-  106: "https://images.unsplash.com/photo-1603133872878-684f208fb84b?w=600&h=450&q=90&auto=format&fit=crop",
+  101: "https://images.unsplash.com/photo-1579584425555-c3ce17fd4351?w=800&q=80", // Philadelphia roll
+  102: "https://images.unsplash.com/photo-1617196034796-73dfa7b1fd56?w=800&q=80", // California roll
+  103: "https://images.unsplash.com/photo-1611143669185-af224c5e3252?w=800&q=80", // Sushi set
+  104: "https://images.unsplash.com/photo-1580822184713-fc5400e7fe10?w=800&q=80", // Salmon sushi
+  105: "https://images.unsplash.com/photo-1547928576-b259fe7a73f7?w=800&q=80", // Tom Yam soup
+  106: "https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=800&q=80", // Wok with chicken
 };
-const FALLBACK = "https://images.unsplash.com/photo-1617196034183-421b4040ed20?w=600&h=450&q=90&auto=format&fit=crop";
+const FALLBACK = "https://images.unsplash.com/photo-1617196034183-421b4040ed20?w=800&q=80";
 
 function DishPhoto({ id, name }: { id: number; name: string }) {
   const [errored, setErrored] = useState(false);
